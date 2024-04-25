@@ -19,7 +19,7 @@
     },
     "windows": [
       {
-        "title": "cesium-desktop",
+        "title": "Cesium Desktop",
         "width": 800,
         "height": 600
       }
