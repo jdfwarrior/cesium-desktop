@@ -1,11 +1,7 @@
 <script setup lang="ts">
-import { onMounted, nextTick } from 'vue'
-import { Viewer } from 'cesium'
+import { useCesium } from './composables/useCesium';
 
-onMounted(async () => {
-  await nextTick()
-  const viewer = new Viewer('cesium')
-})
+const cesium = useCesium('cesium')
 </script>
 
 <template>
