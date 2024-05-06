@@ -2,6 +2,7 @@ import { onMounted, nextTick } from 'vue'
 import { Viewer, CzmlDataSource } from 'cesium'
 import { cursor, controls, selection, tooltip, measure, pickEntity, pickLocation, drawcircle, drawpolygon } from '@jdfwarrior/cesium-mixins'
 import { GeoJsonDataSource } from 'cesium'
+import type { Packet } from '@jdfwarrior/czml'
 
 const instances = new Map<string, CesiumViewer>()
 
@@ -32,7 +33,7 @@ class CesiumViewer {
     }
 
     // @todo replace this data type with the czml packet type
-    process(packets: Record<string, unknown>[]) {
+    process(packets: Packet[]) {
         this.czml.process(packets)
     }
 
@@ -58,7 +59,7 @@ class CesiumViewer {
                 },
                 label: {
                     text: { string: `${name.replace(/"/g, '')} (${abbr})` },
-                    font: "12pt",
+                    font: { font: "12pt" },
                     horizontalOrigin: { horizontalOrigin: 'CENTER' },
                     verticalOrigin: { verticalOrigin: 'CENTER' },
                     translucencyByDistance: {
@@ -68,7 +69,7 @@ class CesiumViewer {
             })
 
             return acc
-        }, [] as unknown[])
+        }, [] as Packet[])
 
         this.countryLabels.process({ id: 'document', version: '1.0' })
         this.countryLabels.process(labels)
