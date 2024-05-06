@@ -1,12 +1,14 @@
 import { onMounted, nextTick } from 'vue'
 import { Viewer, CzmlDataSource } from 'cesium'
 import { cursor, controls, selection, tooltip, measure, pickEntity, pickLocation, drawcircle, drawpolygon } from '@jdfwarrior/cesium-mixins'
+import { GeoJsonDataSource } from 'cesium'
 
 const instances = new Map<string, CesiumViewer>()
 
 class CesiumViewer {
     viewer: Viewer | undefined
     czml = new CzmlDataSource('czml')
+    geojson = new GeoJsonDataSource('geojson')
     constructor(id: string, options: Viewer.ConstructorOptions) {
         onMounted(async () => {
             await nextTick()
@@ -22,6 +24,7 @@ class CesiumViewer {
             this.viewer.extend(drawpolygon)
 
             this.viewer.dataSources.add(this.czml)
+            this.viewer.dataSources.add(this.geojson)
             this.czml.process({ id: "document", version: "1.0" })
         })
     }
@@ -29,7 +32,10 @@ class CesiumViewer {
     // @todo replace this data type with the czml packet type
     process(packets: Record<string, unknown>[]) {
         this.czml.process(packets)
-        this.viewer?.render()
+    }
+
+    loadGeoJson(data: string) {
+        this.geojson.load(data)
     }
 }
 
