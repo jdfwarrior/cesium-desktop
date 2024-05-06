@@ -10,7 +10,7 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@jdfwarrior/czml": "^0.0.4",
+    "@jdfwarrior/czml": "^0.0.5",
     "@tauri-apps/api": "^1",
     "cesium": "^1.116.0",
     "vue": "^3.3.4"
