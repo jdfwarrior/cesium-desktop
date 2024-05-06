@@ -3,6 +3,7 @@ import { onMounted } from 'vue'
 import { listen } from "@tauri-apps/api/event";
 import { readTextFile } from "@tauri-apps/api/fs";
 import { useCesium } from './composables/useCesium';
+import { Packet } from '@jdfwarrior/czml';
 
 const cesium = useCesium('cesium')
 
@@ -14,9 +15,9 @@ function createPoint(name: string, position: number[]) {
       color: { rgba: [255, 255, 255, 255] },
       outlineColor: { rgba: [255, 0, 0, 255] },
       outlineWidth: 2,
-      pixelSize: 8,
+      pixelSize: { number: 8 },
     },
-  }
+  } as Packet
 }
 
 async function init() {
@@ -60,15 +61,76 @@ async function onPickLocation() {
 }
 
 onMounted(async () => {
-  listen('tauri://file-drop', async (event) => {
-    const files = event.payload as string[]
-    const data = await readTextFile(files[0])
-
-    console.log(data)
-  })
-
   cesium?.loadCountryBorders()
   cesium?.loadCountryLabels()
+
+  listen('tauri://file-drop', async (event) => {
+    const files = event.payload as string[]
+    const [file] = files
+
+    if (!file.endsWith('national-parks.json')) return
+
+    const data = await readTextFile(file)
+    const json = JSON.parse(data)
+
+    const colors = [
+      [241, 243, 250, 255],
+      [255, 255, 204, 255],
+      [255, 237, 160, 255],
+      [254, 217, 118, 255],
+      [246, 172, 73, 255],
+      [237, 133, 57, 255],
+      [240, 75, 40, 255]
+    ]
+
+    const parks: Packet[] = json.map(park => {
+
+      const visitors = +(park.visitors.replaceAll(',', ''))
+      let color
+      if (visitors > 1_000_000) color = colors[6]
+      else if (visitors > 750_000) color = colors[5]
+      else if (visitors > 500_000) color = colors[4]
+      else if (visitors > 250_000) color = colors[3]
+      else if (visitors > 100_000) color = colors[2]
+      else if (visitors > 50_000) color = colors[1]
+      else color = colors[0]
+
+      return {
+        id: park.id,
+        name: `${park.title} National Park`,
+        position: {
+          cartographicDegrees: [+park.coordinates.longitude, +park.coordinates.latitude, 0],
+        },
+        // point: {
+        //   pixelSize: { number: 8 },
+        //   color: {
+        //     rgba: color
+        //   }
+        // },
+        cylinder: {
+          length: { number: 400000 },
+          bottomRadius: { number: 50000 },
+          topRadius: { number: 50000 },
+          material: {
+            solidColor: {
+              color: { rgba: color },
+            }
+          },
+          fill: { boolean: true },
+          heightReference: { heightReference: "RELATIVE_TO_GROUND" }
+        },
+        properties: {
+          area_acres: park.area.acres,
+          established: park.date_established_readable,
+          image: `${park.image.attribution_url}/${park.image.url}`,
+          states: park.states.map(state => state.title).join(', '),
+          visitors: visitors
+        }
+      } as Packet
+    })
+
+    cesium?.process(parks)
+  })
 })
 
 </script>

@@ -25,8 +25,8 @@ class CesiumViewer {
             this.viewer.extend(drawcircle)
             this.viewer.extend(drawpolygon)
 
-            this.viewer.dataSources.add(this.czml)
             this.viewer.dataSources.add(this.countryBorders)
+            this.viewer.dataSources.add(this.czml)
             this.viewer.dataSources.add(this.countryLabels)
             this.czml.process({ id: "document", version: "1.0" })
         })
