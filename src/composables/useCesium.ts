@@ -8,7 +8,8 @@ const instances = new Map<string, CesiumViewer>()
 class CesiumViewer {
     viewer: Viewer | undefined
     czml = new CzmlDataSource('czml')
-    geojson = new GeoJsonDataSource('geojson')
+    countryLabels = new CzmlDataSource('countryLabels')
+    countryBorders = new GeoJsonDataSource('countryBorders')
     constructor(id: string, options: Viewer.ConstructorOptions) {
         onMounted(async () => {
             await nextTick()
@@ -24,7 +25,8 @@ class CesiumViewer {
             this.viewer.extend(drawpolygon)
 
             this.viewer.dataSources.add(this.czml)
-            this.viewer.dataSources.add(this.geojson)
+            this.viewer.dataSources.add(this.countryBorders)
+            this.viewer.dataSources.add(this.countryLabels)
             this.czml.process({ id: "document", version: "1.0" })
         })
     }
@@ -34,8 +36,58 @@ class CesiumViewer {
         this.czml.process(packets)
     }
 
-    loadGeoJson(data: string) {
-        this.geojson.load(data)
+    async loadCountryBorders() {
+        this.countryBorders.load('http://localhost:1420/small.geo.json')
+    }
+
+    async loadCountryLabels() {
+        const raw = await fetch('http://localhost:1420/countries.csv')
+        const countries = await raw.text()
+        const rows = countries.split(/\r?\n/)
+        const labels = rows.reduce((acc, row, index) => {
+            if (!index) return acc
+            const cols = row.split(',')
+            const [abbr, lat, lon, name] = cols
+
+            if (!lat || !lon) return acc
+
+            acc.push({
+                id: abbr,
+                position: {
+                    cartographicDegrees: [+lon, +lat, 0]
+                },
+                label: {
+                    text: { string: `${name.replace(/"/g, '')} (${abbr})` },
+                    font: "12pt",
+                    horizontalOrigin: { horizontalOrigin: 'CENTER' },
+                    verticalOrigin: { verticalOrigin: 'CENTER' },
+                    translucencyByDistance: {
+                        nearFarScalar: [1.5e4, 1.0, 1.5e7, 0]
+                    }
+                },
+            })
+
+            return acc
+        }, [] as unknown[])
+
+        this.countryLabels.process({ id: 'document', version: '1.0' })
+        this.countryLabels.process(labels)
+    }
+
+    setCountryBorderVisibility(value: boolean) {
+        this.countryBorders.show = value
+    }
+
+    setCountryLabelVisibility(value: boolean) {
+        this.countryLabels.show = value
+    }
+
+    toggleCountryBorders() {
+        this.countryBorders.show = !this.countryBorders.show
+    }
+
+    toggleCountryLabels() {
+        this.countryLabels.show = !this.countryLabels.show
     }
 }
 

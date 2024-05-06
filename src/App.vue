@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
+import { listen } from "@tauri-apps/api/event";
+import { readTextFile } from "@tauri-apps/api/fs";
 import { useCesium } from './composables/useCesium';
 
 const cesium = useCesium('cesium')
@@ -55,6 +58,18 @@ async function onPickLocation() {
   const result = await cesium?.viewer?.pickLocation()
   console.log(result)
 }
+
+onMounted(async () => {
+  listen('tauri://file-drop', async (event) => {
+    const files = event.payload as string[]
+    const data = await readTextFile(files[0])
+
+    console.log(data)
+  })
+
+  cesium?.loadCountryBorders()
+  cesium?.loadCountryLabels()
+})
 
 </script>
 
