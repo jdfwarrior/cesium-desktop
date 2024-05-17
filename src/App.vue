@@ -3,7 +3,8 @@ import { onMounted } from 'vue'
 import { listen } from "@tauri-apps/api/event";
 import { readTextFile } from "@tauri-apps/api/fs";
 import { useCesium } from './composables/useCesium';
-import { Packet } from '@jdfwarrior/czml';
+import type { Packet } from '@jdfwarrior/czml';
+import type { NationalPark } from './types/types';
 
 const cesium = useCesium('cesium')
 
@@ -83,7 +84,7 @@ onMounted(async () => {
       [240, 75, 40, 255]
     ]
 
-    const parks: Packet[] = json.map(park => {
+    const parks: Packet[] = json.map((park: NationalPark) => {
 
       const visitors = +(park.visitors.replaceAll(',', ''))
       let color
